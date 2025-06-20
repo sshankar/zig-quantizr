@@ -1,6 +1,10 @@
-const testing = @import("std").testing;
+const std = @import("std");
+const testing = std.testing;
+const rand = std.rand;
+
 const Image = @import("image.zig").Image;
 const Histogram = @import("histogram.zig").Histogram;
+const HistogramEntry = @import("histogram.zig").HistogramEntry;
 
 const image_width: usize = 10;
 const image_height: usize = 10;
@@ -41,4 +45,30 @@ test "simple image histogram" {
 
     try h.add_image(i);
     try testing.expectEqual(image_width * image_height, h.map.count());
+}
+
+test "transparent image historgram" {
+    var dc: [image_height * image_width * 4]u8 = undefined;
+    @memcpy(&dc, image_data);
+
+    // set alpha to 0
+    var idx: usize = 0;
+    while (idx < dc.len) : (idx += 4) {
+        dc[idx + 3] = 0;
+    }
+
+    var h: *Histogram = try Histogram.new();
+    defer h.destroy();
+
+    var i: *Image = try Image.new(&dc, image_width, image_height);
+    defer i.destroy();
+
+    try h.add_image(i);
+    try testing.expectEqual(1, h.map.count());
+
+    const v = h.map.get(0);
+    try testing.expectEqual(HistogramEntry{
+        .color = [4]u8{ 0, 0, 0, 0 },
+        .weight = image_height * image_width,
+    }, v);
 }
