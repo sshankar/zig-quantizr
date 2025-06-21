@@ -72,10 +72,12 @@ pub const SearchNode = struct {
         const hi = indexes.items.len / 2;
 
         var ni = std.ArrayList(*SearchIndex).init(alloc);
+        defer ni.deinit();
         try ni.appendSlice(indexes.items[0..hi]);
         const nsn = try SearchNode.new(alloc, &ni, weights);
 
         var fi = std.ArrayList(*SearchIndex).init(alloc);
+        defer fi.deinit();
         try fi.appendSlice(indexes.items[hi..]);
         const fsn = try SearchNode.new(alloc, &fi, weights);
 
