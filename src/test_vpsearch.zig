@@ -1,5 +1,6 @@
-const testing = @import("std").testing;
-const math = @import("std").math;
+const std = @import("std");
+const testing = std.testing;
+const math = std.math;
 
 const vps = @import("vpsearch.zig");
 
@@ -48,4 +49,43 @@ fn distance_std(a: [4]f32, b: [4]f32) f32 {
         math.pow(f32, (a[1] - b[1]), 2.0) +
         math.pow(f32, (a[2] - b[2]), 2.0) +
         math.pow(f32, (a[3] - b[3]), 2.0);
+}
+
+test "search node - empty" {
+    var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
+    const weights = [0]f32{};
+
+    const res = vps.SearchNode.new(testing.allocator, &indexes, &weights) catch unreachable;
+    if (res) |_| {
+        unreachable;
+    }
+}
+
+test "search node - 6 nodes" {
+    var data = [_]*vps.SearchIndex{
+        @constCast(&vps.SearchIndex{ .data = [4]f32{ 1, 2, 3, 4 }, .index = 0 }),
+        @constCast(&vps.SearchIndex{ .data = [4]f32{ 2, 3, 4, 5 }, .index = 1 }),
+        @constCast(&vps.SearchIndex{ .data = [4]f32{ 3, 4, 5, 6 }, .index = 2 }),
+        @constCast(&vps.SearchIndex{ .data = [4]f32{ 4, 5, 6, 7 }, .index = 3 }),
+        @constCast(&vps.SearchIndex{ .data = [4]f32{ 5, 6, 7, 8 }, .index = 4 }),
+    };
+    var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
+    defer indexes.deinit();
+
+    try indexes.appendSlice(data[0..]);
+    const weights = [_]f32{ 1, 2, 3, 4, 5 };
+
+    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, @constCast(&weights));
+    if (r) |rv| {
+        defer rv.deinit(testing.allocator);
+
+        try testing.expect(rv.far == null);
+        try testing.expect(rv.near == null);
+        try testing.expectEqual(std.math.floatMax(f32), rv.radius);
+        try testing.expectEqual(std.math.floatMax(f32), rv.radius_sq);
+        try testing.expectEqual(4, rv.rest.items.len);
+        try testing.expectEqual(data[4], rv.index);
+    } else {
+        unreachable;
+    }
 }
