@@ -1,12 +1,12 @@
 const Error = @import("errors.zig").Error;
-const allocator = @import("std").heap.c_allocator;
+const mem = @import("std").mem;
 
 pub const Image = struct {
     data: []const u8,
     width: usize,
     height: usize,
 
-    pub fn new(data: []const u8, width: usize, height: usize) !*Image {
+    pub fn new(allocator: mem.Allocator, data: []const u8, width: usize, height: usize) !*Image {
         if (data.len < (width * height * 4)) {
             return Error.ValueOutOfRange;
         }
@@ -20,7 +20,7 @@ pub const Image = struct {
         return image;
     }
 
-    pub fn destroy(self: *Image) void {
+    pub fn destroy(self: *Image, allocator: mem.Allocator) void {
         allocator.destroy(self);
     }
 };

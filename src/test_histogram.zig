@@ -37,11 +37,11 @@ const image_data: []const u8 = &[_]u8{
 };
 
 test "simple image histogram" {
-    var h: *Histogram = try Histogram.new();
-    defer h.destroy();
+    var h: *Histogram = try Histogram.new(testing.allocator);
+    defer h.destroy(testing.allocator);
 
-    var i: *Image = try Image.new(image_data, image_width, image_height);
-    defer i.destroy();
+    var i: *Image = try Image.new(testing.allocator, image_data, image_width, image_height);
+    defer i.destroy(testing.allocator);
 
     try h.add_image(i);
     try testing.expectEqual(image_width * image_height, h.map.count());
@@ -57,11 +57,11 @@ test "transparent image historgram" {
         dc[idx + 3] = 0;
     }
 
-    var h: *Histogram = try Histogram.new();
-    defer h.destroy();
+    var h: *Histogram = try Histogram.new(testing.allocator);
+    defer h.destroy(testing.allocator);
 
-    var i: *Image = try Image.new(&dc, image_width, image_height);
-    defer i.destroy();
+    var i: *Image = try Image.new(testing.allocator, &dc, image_width, image_height);
+    defer i.destroy(testing.allocator);
 
     try h.add_image(i);
     try testing.expectEqual(1, h.map.count());

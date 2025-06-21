@@ -1,5 +1,5 @@
 const std = @import("std");
-const allocator = std.heap.c_allocator;
+const mem = std.mem;
 
 const Image = @import("image.zig").Image;
 
@@ -11,7 +11,7 @@ pub const HistogramEntry = struct {
 pub const Histogram = struct {
     map: std.AutoHashMap(u64, HistogramEntry),
 
-    pub fn new() !*Histogram {
+    pub fn new(allocator: mem.Allocator) !*Histogram {
         const m = std.AutoHashMap(u64, HistogramEntry).init(allocator);
         const h = try allocator.create(Histogram);
         h.* = Histogram{
@@ -44,7 +44,7 @@ pub const Histogram = struct {
         }
     }
 
-    pub fn destroy(self: *Histogram) void {
+    pub fn destroy(self: *Histogram, allocator: mem.Allocator) void {
         self.map.deinit();
         allocator.destroy(self);
     }
