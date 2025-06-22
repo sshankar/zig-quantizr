@@ -211,6 +211,28 @@ test "search - nearest" {
     }
 }
 
+test "search tree - nearest absolute" {
+    var td = GenerateTestData(18){};
+    try td.init(testing.allocator);
+    defer td.deinit(testing.allocator);
+
+    var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
+    defer indexes.deinit();
+    try indexes.appendSlice(&td.indarr);
+
+    const pin = [4]f32{ 1, 2, 3, 4 };
+    const closest = td.indarr[0];
+    const dist = distance_std(pin, closest.data);
+
+    const tree = try vps.SearchTree.new(testing.allocator, &indexes, &td.weights);
+    defer tree.deinit(testing.allocator);
+    const nd = try tree.find_nearest(testing.allocator, pin);
+
+    try testing.expectEqual(closest.index, nd.index);
+    try testing.expectEqual(math.sqrt(dist), nd.distance);
+    try testing.expectEqual(closest.data, nd.data);
+}
+
 fn GenerateTestData(comptime length: usize) type {
     return struct {
         indarr: [length]*vps.SearchIndex = undefined,

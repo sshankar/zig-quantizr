@@ -174,6 +174,46 @@ pub const SearchNode = struct {
     }
 };
 
+pub const SearchTree = struct {
+    root: ?*SearchNode,
+
+    pub fn new(allocator: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []f32) !*SearchTree {
+        std.debug.assert(weights.len >= indexes.items.len);
+        std.debug.assert(indexes.items.len <= 256);
+
+        const rn = try SearchNode.new(allocator, indexes, weights);
+        const st = try allocator.create(SearchTree);
+        st.* = SearchTree{
+            .root = rn,
+        };
+        return st;
+    }
+
+    pub fn find_nearest(self: *SearchTree, allocator: mem.Allocator, pin: [4]f32) !struct { index: u8, data: [4]f32, distance: f32 } {
+        if (self.root) |rvp| {
+            const visitor = try SearchVisitor.new(allocator);
+            defer visitor.deinit(allocator);
+
+            rvp.accept(pin, visitor);
+            if (visitor.index) |ni| {
+                return .{
+                    .index = ni.index,
+                    .data = ni.data,
+                    .distance = visitor.distance,
+                };
+            }
+        }
+        return .{ .index = 0, .data = [4]f32{ 0, 0, 0, 0 }, .distance = std.math.floatMax(f32) };
+    }
+
+    pub fn deinit(self: *SearchTree, allocator: mem.Allocator) void {
+        if (self.root) |rn| {
+            rn.deinit(allocator);
+        }
+        allocator.destroy(self);
+    }
+};
+
 // metric space distance function
 pub fn distance(a: [4]f32, b: [4]f32) f32 {
     const av: @Vector(4, f32) = a;

@@ -2,8 +2,8 @@
 
 - [X] Image
 - [X] Histogram
-- [ ] Vantage Point Tree
-- [ ] V-P Search
+- [X] Vantage Point Tree
+- [X] V-P Search
 - [ ] Colormap
 - [ ] Quantization
   - [ ] No Dithering
