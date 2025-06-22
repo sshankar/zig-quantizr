@@ -6,6 +6,34 @@ pub const SearchIndex = struct {
     data: [4]f32,
 };
 
+pub const SearchVisitor = struct {
+    index: ?*SearchIndex,
+    distance: f32,
+    distance_sq: f32,
+
+    pub fn new(alloc: mem.Allocator) !*SearchVisitor {
+        const sv = try alloc.create(SearchVisitor);
+        sv.* = SearchVisitor{
+            .index = null,
+            .distance = std.math.floatMax(f32),
+            .distance_sq = std.math.floatMax(f32),
+        };
+        return &sv;
+    }
+
+    pub fn visit(self: *SearchVisitor, index: *SearchIndex, distance_sq: f32) void {
+        if (distance_sq < self.distance_sq) {
+            self.index = index;
+            self.distance = std.math.sqrt(distance_sq);
+            self.distance_sq = distance_sq;
+        }
+    }
+
+    pub fn deinit(self: *SearchVisitor, alloc: mem.Allocator) void {
+        alloc.destroy(self);
+    }
+};
+
 pub const SearchNode = struct {
     index: *SearchIndex,
     near: ?*SearchNode,
@@ -14,7 +42,7 @@ pub const SearchNode = struct {
     radius: f32,
     radius_sq: f32,
 
-    pub fn new(alloc: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []f32) !?*SearchNode {
+    pub fn new(alloc: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []const f32) !?*SearchNode {
         if (indexes.items.len == 0) {
             return null;
         }
