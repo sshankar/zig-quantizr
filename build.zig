@@ -2,15 +2,13 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
 
-    const libquantizr = b.addSharedLibrary(.{
-        .name = "libquantizr",
-        .root_source_file = b.path("src/api.zig"),
+    const test_step = b.step("test", "Run unit tests");
+    const unit_tests = b.addTest(.{
+        .root_source_file = b.path("src/test_root.zig"),
         .target = target,
-        .optimize = optimize,
-        .version = .{ .major = 0, .minor = 1, .patch = 0 },
     });
 
-    b.installArtifact(libquantizr);
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+    test_step.dependOn(&run_unit_tests.step);
 }
