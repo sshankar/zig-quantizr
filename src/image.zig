@@ -6,7 +6,7 @@ pub const Image = struct {
     width: usize,
     height: usize,
 
-    pub fn new(allocator: mem.Allocator, data: []const u8, width: usize, height: usize) !*Image {
+    pub fn init(allocator: mem.Allocator, data: []const u8, width: usize, height: usize) !*Image {
         if (data.len < (width * height * 4)) {
             return Error.ValueOutOfRange;
         }
@@ -20,7 +20,7 @@ pub const Image = struct {
         return image;
     }
 
-    pub fn destroy(self: *Image, allocator: mem.Allocator) void {
+    pub fn deinit(self: *Image, allocator: mem.Allocator) void {
         allocator.destroy(self);
     }
 };

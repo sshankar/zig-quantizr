@@ -55,7 +55,7 @@ test "search node - empty" {
     var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
     const weights = [0]f32{};
 
-    const res = vps.SearchNode.new(testing.allocator, &indexes, &weights) catch unreachable;
+    const res = vps.SearchNode.init(testing.allocator, &indexes, &weights) catch unreachable;
     if (res) |_| {
         unreachable;
     }
@@ -70,7 +70,7 @@ test "search node - 6 nodes" {
     defer indexes.deinit();
     try indexes.appendSlice(&td.indarr);
 
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.init(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
@@ -94,7 +94,7 @@ test "search node - 18 nodes" {
     defer indexes.deinit();
     try indexes.appendSlice(&td.indarr);
 
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.init(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
@@ -113,7 +113,7 @@ test "search visitor - set" {
         .index = 1,
     };
 
-    const sv = try vps.SearchVisitor.new(testing.allocator);
+    const sv = try vps.SearchVisitor.init(testing.allocator);
     defer sv.deinit(testing.allocator);
 
     sv.visit(sn, 4);
@@ -131,7 +131,7 @@ test "search visitor - override" {
         .index = 1,
     };
 
-    const sv = try vps.SearchVisitor.new(testing.allocator);
+    const sv = try vps.SearchVisitor.init(testing.allocator);
     defer sv.deinit(testing.allocator);
 
     sv.visit(sn, 16);
@@ -163,11 +163,11 @@ test "search - absolute" {
     defer indexes.deinit();
     try indexes.appendSlice(&td.indarr);
 
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.init(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
-        const sv = try vps.SearchVisitor.new(testing.allocator);
+        const sv = try vps.SearchVisitor.init(testing.allocator);
         defer sv.deinit(testing.allocator);
 
         const pin = [4]f32{ 1, 2, 3, 4 };
@@ -191,11 +191,11 @@ test "search - nearest" {
     defer indexes.deinit();
     try indexes.appendSlice(&td.indarr);
 
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.init(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
-        const sv = try vps.SearchVisitor.new(testing.allocator);
+        const sv = try vps.SearchVisitor.init(testing.allocator);
         defer sv.deinit(testing.allocator);
 
         const pin = [4]f32{ 23, 24, 25, 26 }; // > 18+3
@@ -224,7 +224,7 @@ test "search tree - nearest absolute" {
     const closest = td.indarr[0];
     const dist = distance_std(pin, closest.data);
 
-    const tree = try vps.SearchTree.new(testing.allocator, &indexes, &td.weights);
+    const tree = try vps.SearchTree.init(testing.allocator, &indexes, &td.weights);
     defer tree.deinit(testing.allocator);
     const nd = try tree.find_nearest(testing.allocator, pin);
 

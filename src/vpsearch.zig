@@ -11,7 +11,7 @@ pub const SearchVisitor = struct {
     distance: f32,
     distance_sq: f32,
 
-    pub fn new(alloc: mem.Allocator) !*SearchVisitor {
+    pub fn init(alloc: mem.Allocator) !*SearchVisitor {
         const sv = try alloc.create(SearchVisitor);
         sv.* = SearchVisitor{
             .index = null,
@@ -42,7 +42,7 @@ pub const SearchNode = struct {
     radius: f32,
     radius_sq: f32,
 
-    pub fn new(alloc: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []const f32) !?*SearchNode {
+    pub fn init(alloc: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []const f32) !?*SearchNode {
         if (indexes.items.len == 0) {
             return null;
         }
@@ -102,12 +102,12 @@ pub const SearchNode = struct {
         var ni = std.ArrayList(*SearchIndex).init(alloc);
         defer ni.deinit();
         try ni.appendSlice(indexes.items[0..hi]);
-        const nsn = try SearchNode.new(alloc, &ni, weights);
+        const nsn = try SearchNode.init(alloc, &ni, weights);
 
         var fi = std.ArrayList(*SearchIndex).init(alloc);
         defer fi.deinit();
         try fi.appendSlice(indexes.items[hi..]);
-        const fsn = try SearchNode.new(alloc, &fi, weights);
+        const fsn = try SearchNode.init(alloc, &fi, weights);
 
         const rest = std.ArrayList(*SearchIndex).init(alloc);
         const radius_sq = distance(vp_ind.data, fi.items[0].data);
@@ -177,11 +177,11 @@ pub const SearchNode = struct {
 pub const SearchTree = struct {
     root: ?*SearchNode,
 
-    pub fn new(allocator: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []f32) !*SearchTree {
+    pub fn init(allocator: mem.Allocator, indexes: *std.ArrayList(*SearchIndex), weights: []f32) !*SearchTree {
         std.debug.assert(weights.len >= indexes.items.len);
         std.debug.assert(indexes.items.len <= 256);
 
-        const rn = try SearchNode.new(allocator, indexes, weights);
+        const rn = try SearchNode.init(allocator, indexes, weights);
         const st = try allocator.create(SearchTree);
         st.* = SearchTree{
             .root = rn,
@@ -191,7 +191,7 @@ pub const SearchTree = struct {
 
     pub fn find_nearest(self: *SearchTree, allocator: mem.Allocator, pin: [4]f32) !struct { index: u8, data: [4]f32, distance: f32 } {
         if (self.root) |rvp| {
-            const visitor = try SearchVisitor.new(allocator);
+            const visitor = try SearchVisitor.init(allocator);
             defer visitor.deinit(allocator);
 
             rvp.accept(pin, visitor);

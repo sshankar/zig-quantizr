@@ -11,6 +11,10 @@
 - [ ] C API
 - [ ] Benchmarks
 
+## Misc
+- [ ] Manage allocator better (i.e, for search tree make it managed like an array list).
+- [ ] Revisit and adopt more idiomatic zig conventions.
+
 ### Optimizations
 - [ ] Prep: Setup benchmarks using [zBench](https://github.com/hendriknielaender/zBench)
 - [ ] Histogram: Use a simpler key hash function via context.
