@@ -123,6 +123,47 @@ pub const SearchNode = struct {
         return node;
     }
 
+    pub fn accept(self: *SearchNode, pin: [4]f32, visitor: *SearchVisitor) void {
+        const distance_sq = distance(self.index.data, pin);
+        visitor.visit(self.index.data, distance_sq);
+
+        // items are set only when near/far is empty.
+        if (self.rest.items.len > 0) {
+            for (self.rest.items) |item| {
+                visitor.visit(item.data, distance(item.data, pin));
+            }
+            return;
+        }
+
+        if (distance_sq < self.radius_sq) {
+            if (self.near) |nst| {
+                nst.accept(pin, visitor);
+            }
+            // If the distance from the vantage point to the query is at least as
+            // large as the node's radius minus the closest distance found so far,
+            // then part of the "far" region is close enough that it might contain
+            // a closer neighbor
+            if (self.far) |fst| {
+                if (std.math.sqrt(distance_sq) >= self.radius - visitor.distance) {
+                    fst.accept(pin, visitor);
+                }
+            }
+
+            return;
+        }
+
+        // else
+        if (self.far) |fst| {
+            fst.accept(pin, visitor);
+        }
+
+        if (self.near) |nst| {
+            if (std.math.sqrt(distance_sq) <= self.radius + visitor.distance) {
+                nst.accept(pin, visitor);
+            }
+        }
+    }
+
     pub fn deinit(self: *SearchNode, alloc: mem.Allocator) void {
         self.rest.deinit();
 
