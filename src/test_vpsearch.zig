@@ -62,20 +62,15 @@ test "search node - empty" {
 }
 
 test "search node - 6 nodes" {
-    var data = [_]*vps.SearchIndex{
-        @constCast(&vps.SearchIndex{ .data = [4]f32{ 1, 2, 3, 4 }, .index = 0 }),
-        @constCast(&vps.SearchIndex{ .data = [4]f32{ 2, 3, 4, 5 }, .index = 1 }),
-        @constCast(&vps.SearchIndex{ .data = [4]f32{ 3, 4, 5, 6 }, .index = 2 }),
-        @constCast(&vps.SearchIndex{ .data = [4]f32{ 4, 5, 6, 7 }, .index = 3 }),
-        @constCast(&vps.SearchIndex{ .data = [4]f32{ 5, 6, 7, 8 }, .index = 4 }),
-    };
+    var td = GenerateTestData(5){};
+    try td.init(testing.allocator);
+    defer td.deinit(testing.allocator);
+
     var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
     defer indexes.deinit();
+    try indexes.appendSlice(&td.indarr);
 
-    try indexes.appendSlice(data[0..]);
-    const weights = [_]f32{ 1, 2, 3, 4, 5 };
-
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
@@ -84,43 +79,22 @@ test "search node - 6 nodes" {
         try testing.expectEqual(std.math.floatMax(f32), rv.radius);
         try testing.expectEqual(std.math.floatMax(f32), rv.radius_sq);
         try testing.expectEqual(4, rv.rest.items.len);
-        try testing.expectEqual(data[4], rv.index);
+        try testing.expectEqual(td.indarr[4], rv.index);
     } else {
         unreachable;
     }
 }
 
 test "search node - 18 nodes" {
-    var indarr: [18]*vps.SearchIndex = undefined;
-    var weights: [18]f32 = undefined;
-
-    for (0..18) |idx| {
-        weights[idx] = @as(f32, @floatFromInt(idx));
-
-        const si = try std.testing.allocator.create(vps.SearchIndex);
-        si.* = vps.SearchIndex{
-            .data = [4]f32{
-                @as(f32, @floatFromInt(idx + 1)),
-                @as(f32, @floatFromInt(idx + 2)),
-                @as(f32, @floatFromInt(idx + 3)),
-                @as(f32, @floatFromInt(idx + 4)),
-            },
-            .index = @intCast(idx),
-        };
-        indarr[idx] = si;
-    }
-
-    defer {
-        for (indarr) |i| {
-            std.testing.allocator.destroy(i);
-        }
-    }
+    var td = GenerateTestData(18){};
+    try td.init(testing.allocator);
+    defer td.deinit(testing.allocator);
 
     var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
     defer indexes.deinit();
-    try indexes.appendSlice(&indarr);
+    try indexes.appendSlice(&td.indarr);
 
-    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &weights);
+    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
     if (r) |rv| {
         defer rv.deinit(testing.allocator);
 
@@ -178,4 +152,34 @@ test "search visitor - override" {
     try testing.expectEqual(4, sv.distance_sq);
     try testing.expectEqual(2, sv.distance);
     try testing.expectEqual(sns, sv.index);
+}
+
+fn GenerateTestData(comptime length: usize) type {
+    return struct {
+        indarr: [length]*vps.SearchIndex = undefined,
+        weights: [length]f32 = undefined,
+
+        fn init(self: *GenerateTestData(length), allocator: std.mem.Allocator) !void {
+            for (0..length) |idx| {
+                self.weights[idx] = @as(f32, @floatFromInt(idx));
+                const si = try allocator.create(vps.SearchIndex);
+                si.* = vps.SearchIndex{
+                    .data = [4]f32{
+                        @as(f32, @floatFromInt(idx + 1)),
+                        @as(f32, @floatFromInt(idx + 2)),
+                        @as(f32, @floatFromInt(idx + 3)),
+                        @as(f32, @floatFromInt(idx + 4)),
+                    },
+                    .index = @intCast(idx),
+                };
+                self.indarr[idx] = si;
+            }
+        }
+
+        fn deinit(self: *GenerateTestData(length), allocator: std.mem.Allocator) void {
+            for (self.indarr) |i| {
+                allocator.destroy(i);
+            }
+        }
+    };
 }
