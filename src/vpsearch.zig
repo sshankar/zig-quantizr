@@ -125,12 +125,12 @@ pub const SearchNode = struct {
 
     pub fn accept(self: *SearchNode, pin: [4]f32, visitor: *SearchVisitor) void {
         const distance_sq = distance(self.index.data, pin);
-        visitor.visit(self.index.data, distance_sq);
+        visitor.visit(self.index, distance_sq);
 
         // items are set only when near/far is empty.
         if (self.rest.items.len > 0) {
             for (self.rest.items) |item| {
-                visitor.visit(item.data, distance(item.data, pin));
+                visitor.visit(item, distance(item.data, pin));
             }
             return;
         }

@@ -154,6 +154,63 @@ test "search visitor - override" {
     try testing.expectEqual(sns, sv.index);
 }
 
+test "search - absolute" {
+    var td = GenerateTestData(18){};
+    try td.init(testing.allocator);
+    defer td.deinit(testing.allocator);
+
+    var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
+    defer indexes.deinit();
+    try indexes.appendSlice(&td.indarr);
+
+    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    if (r) |rv| {
+        defer rv.deinit(testing.allocator);
+
+        const sv = try vps.SearchVisitor.new(testing.allocator);
+        defer sv.deinit(testing.allocator);
+
+        const pin = [4]f32{ 1, 2, 3, 4 };
+
+        rv.accept(pin, @constCast(sv));
+        try testing.expectEqual(pin, sv.index.?.data);
+        try testing.expectEqual(0, sv.index.?.index);
+        try testing.expectEqual(0, sv.distance);
+        try testing.expectEqual(0, sv.distance_sq);
+    } else {
+        unreachable;
+    }
+}
+
+test "search - nearest" {
+    var td = GenerateTestData(18){};
+    try td.init(testing.allocator);
+    defer td.deinit(testing.allocator);
+
+    var indexes = std.ArrayList(*vps.SearchIndex).init(testing.allocator);
+    defer indexes.deinit();
+    try indexes.appendSlice(&td.indarr);
+
+    const r: ?*vps.SearchNode = try vps.SearchNode.new(testing.allocator, &indexes, &td.weights);
+    if (r) |rv| {
+        defer rv.deinit(testing.allocator);
+
+        const sv = try vps.SearchVisitor.new(testing.allocator);
+        defer sv.deinit(testing.allocator);
+
+        const pin = [4]f32{ 23, 24, 25, 26 }; // > 18+3
+        const closest = td.indarr[17];
+        const dist = distance_std(pin, closest.data);
+
+        rv.accept(pin, @constCast(sv));
+        try testing.expectEqual(closest, sv.index.?);
+        try testing.expectEqual(math.sqrt(dist), sv.distance);
+        try testing.expectEqual(dist, sv.distance_sq);
+    } else {
+        unreachable;
+    }
+}
+
 fn GenerateTestData(comptime length: usize) type {
     return struct {
         indarr: [length]*vps.SearchIndex = undefined,
