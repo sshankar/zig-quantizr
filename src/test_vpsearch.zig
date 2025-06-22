@@ -129,3 +129,53 @@ test "search node - 18 nodes" {
         unreachable;
     }
 }
+
+test "search visitor - set" {
+    const sn = try testing.allocator.create(vps.SearchIndex);
+    defer testing.allocator.destroy(sn);
+
+    sn.* = vps.SearchIndex{
+        .data = [4]f32{ 1, 2, 3, 4 },
+        .index = 1,
+    };
+
+    const sv = try vps.SearchVisitor.new(testing.allocator);
+    defer sv.deinit(testing.allocator);
+
+    sv.visit(sn, 4);
+
+    try testing.expectEqual(4, sv.distance_sq);
+    try testing.expectEqual(2, sv.distance);
+    try testing.expectEqual(sn, sv.index);
+}
+
+test "search visitor - override" {
+    const sn = try testing.allocator.create(vps.SearchIndex);
+    defer testing.allocator.destroy(sn);
+    sn.* = vps.SearchIndex{
+        .data = [4]f32{ 1, 2, 3, 4 },
+        .index = 1,
+    };
+
+    const sv = try vps.SearchVisitor.new(testing.allocator);
+    defer sv.deinit(testing.allocator);
+
+    sv.visit(sn, 16);
+
+    try testing.expectEqual(16, sv.distance_sq);
+    try testing.expectEqual(4, sv.distance);
+    try testing.expectEqual(sn, sv.index);
+
+    const sns = try testing.allocator.create(vps.SearchIndex);
+    defer testing.allocator.destroy(sns);
+    sns.* = vps.SearchIndex{
+        .data = [4]f32{ 1, 2, 3, 4 },
+        .index = 1,
+    };
+
+    sv.visit(sns, 4);
+
+    try testing.expectEqual(4, sv.distance_sq);
+    try testing.expectEqual(2, sv.distance);
+    try testing.expectEqual(sns, sv.index);
+}

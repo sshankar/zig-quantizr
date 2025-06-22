@@ -18,7 +18,7 @@ pub const SearchVisitor = struct {
             .distance = std.math.floatMax(f32),
             .distance_sq = std.math.floatMax(f32),
         };
-        return &sv;
+        return sv;
     }
 
     pub fn visit(self: *SearchVisitor, index: *SearchIndex, distance_sq: f32) void {
